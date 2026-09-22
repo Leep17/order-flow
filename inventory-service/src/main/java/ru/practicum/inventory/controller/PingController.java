@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/ping")
 public class PingController {
-
     @GetMapping
     public String ping() {
         return "inventory-service";
