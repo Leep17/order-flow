@@ -2,7 +2,9 @@ package ru.practicum.order_flow.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import ru.practicum.order_flow.exception.InventoryUnavailableException;
 
 @Component
 public class InventoryClient {
@@ -13,11 +15,15 @@ public class InventoryClient {
     }
 
     public String ping() {
-        return restClient
-                .get()
-                .uri("/ping")
-                .retrieve()
-                .body(String.class);
+        try {
+            return restClient
+                    .get()
+                    .uri("/ping")
+                    .retrieve()
+                    .body(String.class);
+        } catch (ResourceAccessException e) {
+            throw  new InventoryUnavailableException("Сервис остатков временно недоступен", e);
+        }
     }
 
 
