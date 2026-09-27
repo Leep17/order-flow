@@ -10,8 +10,8 @@ import ru.practicum.order_flow.exception.InventoryUnavailableException;
 public class InventoryClient {
     private final RestClient restClient;
 
-    public InventoryClient(@Value("${inventory.base-url}") String baseUrl) {
-        this.restClient = RestClient.create(baseUrl);
+    public InventoryClient(@Value("${inventory.base-url}") String baseUrl, RestClient.Builder builder) {
+        this.restClient = builder.baseUrl(baseUrl).build();
     }
 
     public String ping() {
@@ -22,7 +22,7 @@ public class InventoryClient {
                     .retrieve()
                     .body(String.class);
         } catch (ResourceAccessException e) {
-            throw  new InventoryUnavailableException("Сервис остатков временно недоступен", e);
+            throw new InventoryUnavailableException("Сервис остатков временно недоступен", e);
         }
     }
 
