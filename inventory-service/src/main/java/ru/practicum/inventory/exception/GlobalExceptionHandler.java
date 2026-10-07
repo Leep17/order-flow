@@ -14,4 +14,10 @@ public class GlobalExceptionHandler {
         return new ApiError(e.getMessage());
     }
 
+    @ExceptionHandler(InsufficientStockException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleInsufficientStockException(InsufficientStockException e) {
+        return new ApiError(e.getMessage());
+    }
+
 }
