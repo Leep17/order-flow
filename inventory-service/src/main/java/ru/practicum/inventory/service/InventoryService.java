@@ -23,7 +23,7 @@ public class InventoryService {
         InventoryItem inventoryItem = inventoryRepository.findBySku(sku)
                 .orElseThrow(() -> new InventoryItemNotFoundException("Предмет со sku=" + sku + " не найден"));
 
-        if (inventoryItem.getQuantity()>= quantity) {
+         if (inventoryItem.getQuantity()>= quantity) {
             inventoryItem.setQuantity(inventoryItem.getQuantity()-quantity);
         } else {
             throw new InsufficientStockException("Складская позиция существует, но запрошенное количество зарезервировать невозможно.");
