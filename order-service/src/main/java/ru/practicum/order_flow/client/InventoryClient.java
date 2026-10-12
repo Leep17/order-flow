@@ -3,10 +3,14 @@ package ru.practicum.order_flow.client;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import ru.practicum.order_flow.dto.ReserveInventoryRequestDto;
+import ru.practicum.order_flow.exception.InsufficientInventoryException;
+import ru.practicum.order_flow.exception.InventoryItemNotFoundException;
 import ru.practicum.order_flow.exception.InventoryUnavailableException;
 
 import java.time.Duration;
@@ -37,6 +41,32 @@ public class InventoryClient {
                     .body(String.class);
         } catch (ResourceAccessException e) {
             throw new InventoryUnavailableException("Сервис остатков временно недоступен", e);
+        }
+    }
+
+    public void reserve(String sku, int quantity) {
+        ReserveInventoryRequestDto reserveInventoryRequestDto = new ReserveInventoryRequestDto(sku, quantity);
+        try {
+            restClient
+                    .post()
+                    .uri("/inventory/reserve")
+                    .body(reserveInventoryRequestDto)
+                    .retrieve()
+                    .onStatus(
+                            status -> status.value() == HttpStatus.NOT_FOUND.value(),
+                            (request, response) -> {
+                                throw new InventoryItemNotFoundException("Складская позиция со sku=" + sku + " не найдена");
+                            }
+                    )
+                    .onStatus(
+                            status -> status.value() == HttpStatus.CONFLICT.value(),
+                            (request, response) -> {
+                                throw new InsufficientInventoryException("Недостаточно остатка для sku=" + sku);
+                            }
+                    )
+                    .toBodilessEntity();
+        } catch (ResourceAccessException e) {
+            throw new InventoryUnavailableException("Сервис резервирования временно недоступен", e);
         }
     }
 

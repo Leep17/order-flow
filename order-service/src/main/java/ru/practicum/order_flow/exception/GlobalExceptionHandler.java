@@ -15,4 +15,16 @@ public class GlobalExceptionHandler {
         return new ApiError(e.getMessage());
     }
 
+    @ExceptionHandler(InventoryItemNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleInventoryItemNotFoundException(InventoryItemNotFoundException e) {
+        return new ApiError(e.getMessage());
+    }
+
+    @ExceptionHandler(InsufficientInventoryException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleInsufficientInventoryException(InsufficientInventoryException e) {
+        return new ApiError(e.getMessage());
+    }
+
 }
