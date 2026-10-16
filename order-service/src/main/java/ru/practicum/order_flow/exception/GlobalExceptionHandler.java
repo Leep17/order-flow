@@ -27,4 +27,10 @@ public class GlobalExceptionHandler {
         return new ApiError(e.getMessage());
     }
 
+    @ExceptionHandler(OrderNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleOrderNotFoundException(OrderNotFoundException e) {
+        return new ApiError(e.getMessage());
+    }
+
 }
