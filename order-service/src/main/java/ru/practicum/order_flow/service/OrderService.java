@@ -3,7 +3,11 @@ package ru.practicum.order_flow.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.order_flow.client.InventoryClient;
 import ru.practicum.order_flow.dto.NewOrderDto;
+import ru.practicum.order_flow.exception.InsufficientInventoryException;
+import ru.practicum.order_flow.exception.InventoryItemNotFoundException;
+import ru.practicum.order_flow.exception.InventoryUnavailableException;
 import ru.practicum.order_flow.exception.OrderNotFoundException;
 import ru.practicum.order_flow.order.Order;
 import ru.practicum.order_flow.order.OrderStatus;
@@ -15,13 +19,14 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
+    private final InventoryClient inventoryClient;
 
     public Order getById(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new OrderNotFoundException("Заказ с id=" + id + " не найден"));
     }
 
-    @Transactional
+
     public Order save(NewOrderDto newOrderDto) {
 
         Order order = new Order();
@@ -29,6 +34,17 @@ public class OrderService {
         order.setQuantity(newOrderDto.getQuantity());
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(LocalDateTime.now());
-        return orderRepository.save(order);
+        orderRepository.save(order);
+
+        try {
+            inventoryClient.reserve(newOrderDto.getSku(), newOrderDto.getQuantity());
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+        } catch (InventoryItemNotFoundException|InsufficientInventoryException e) {
+            order.setStatus(OrderStatus.REJECTED);
+            orderRepository.save(order);
+            throw e;
+        }
+        return order;
     }
 }
