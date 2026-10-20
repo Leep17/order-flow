@@ -1,13 +1,11 @@
 package ru.practicum.order_flow.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.order_flow.client.InventoryClient;
 import ru.practicum.order_flow.dto.NewOrderDto;
 import ru.practicum.order_flow.exception.InsufficientInventoryException;
 import ru.practicum.order_flow.exception.InventoryItemNotFoundException;
-import ru.practicum.order_flow.exception.InventoryUnavailableException;
 import ru.practicum.order_flow.exception.OrderNotFoundException;
 import ru.practicum.order_flow.order.Order;
 import ru.practicum.order_flow.order.OrderStatus;
@@ -37,7 +35,7 @@ public class OrderService {
         orderRepository.save(order);
 
         try {
-            inventoryClient.reserve(newOrderDto.getSku(), newOrderDto.getQuantity());
+            inventoryClient.reserve(newOrderDto.getSku(), newOrderDto.getQuantity(), order.getId());
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
         } catch (InventoryItemNotFoundException|InsufficientInventoryException e) {

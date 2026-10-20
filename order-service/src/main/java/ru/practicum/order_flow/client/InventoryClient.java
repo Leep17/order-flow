@@ -1,5 +1,6 @@
 package ru.practicum.order_flow.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
@@ -8,18 +9,18 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import ru.practicum.order_flow.dto.InventoryErrorResponseDto;
 import ru.practicum.order_flow.dto.ReserveInventoryRequestDto;
-import ru.practicum.order_flow.exception.InsufficientInventoryException;
-import ru.practicum.order_flow.exception.InventoryItemNotFoundException;
-import ru.practicum.order_flow.exception.InventoryUnavailableException;
+import ru.practicum.order_flow.exception.*;
 
 import java.time.Duration;
 
 @Component
 public class InventoryClient {
     private final RestClient restClient;
+    private final ObjectMapper objectMapper;
 
-    public InventoryClient(@Value("${inventory.base-url}") String baseUrl, RestClient.Builder builder) {
+    public InventoryClient(@Value("${inventory.base-url}") String baseUrl, RestClient.Builder builder, ObjectMapper objectMapper) {
         ClientHttpRequestFactorySettings settings =
                 ClientHttpRequestFactorySettings
                         .defaults()
@@ -29,7 +30,7 @@ public class InventoryClient {
                         );
         ClientHttpRequestFactory clientHttpRequestFactory = ClientHttpRequestFactoryBuilder.detect().build(settings);
         this.restClient = builder.requestFactory(clientHttpRequestFactory).baseUrl(baseUrl).build();
-
+        this.objectMapper =  objectMapper;
     }
 
     public String ping() {
@@ -44,8 +45,8 @@ public class InventoryClient {
         }
     }
 
-    public void reserve(String sku, int quantity) {
-        ReserveInventoryRequestDto reserveInventoryRequestDto = new ReserveInventoryRequestDto(sku, quantity);
+    public void reserve(String sku, int quantity, Long orderId) {
+        ReserveInventoryRequestDto reserveInventoryRequestDto = new ReserveInventoryRequestDto(sku, quantity, orderId);
         try {
             restClient
                     .post()
@@ -61,7 +62,17 @@ public class InventoryClient {
                     .onStatus(
                             status -> status.value() == HttpStatus.CONFLICT.value(),
                             (request, response) -> {
-                                throw new InsufficientInventoryException("Недостаточно остатка для sku=" + sku);
+                                InventoryErrorResponseDto error = objectMapper.readValue(
+                                        response.getBody(),
+                                        InventoryErrorResponseDto.class
+                                );
+                                 if ("INSUFFICIENT_STOCK".equals(error.getCode())) {
+                                     throw new InsufficientInventoryException(error.getMessage());
+                                } else if ("RESERVATION_CONFLICT".equals(error.getCode())) {
+                                     throw  new InventoryReservationConflictException(error.getMessage());
+                                 } else {
+                                     throw new InventoryIntegrationException(error.getMessage());
+                                 }
                             }
                     )
                     .toBodilessEntity();

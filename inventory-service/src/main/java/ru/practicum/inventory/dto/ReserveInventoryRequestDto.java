@@ -1,6 +1,7 @@
 package ru.practicum.inventory.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -17,4 +18,8 @@ public class ReserveInventoryRequestDto {
 
     @Positive
     private int quantity;
+
+    @NotNull
+    @Positive
+    private Long orderId;
 }

@@ -33,4 +33,17 @@ public class GlobalExceptionHandler {
         return new ApiError(e.getMessage());
     }
 
+    @ExceptionHandler(InventoryReservationConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleInventoryReservationConflictException(InventoryReservationConflictException e) {
+        return new ApiError(e.getMessage());
+    }
+
+    @ExceptionHandler(InventoryIntegrationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleInventoryIntegrationException(InventoryIntegrationException e) {
+        return new ApiError(e.getMessage());
+    }
+
+
 }
