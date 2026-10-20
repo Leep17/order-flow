@@ -40,10 +40,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InventoryIntegrationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiError handleInventoryIntegrationException(InventoryIntegrationException e) {
         return new ApiError(e.getMessage());
     }
-
-
 }

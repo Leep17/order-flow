@@ -2,6 +2,7 @@ package ru.practicum.inventory.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.practicum.inventory.InventoryItem.InventoryItem;
 import ru.practicum.inventory.exception.InsufficientStockException;
@@ -25,15 +26,15 @@ public class InventoryService {
                    .orElseThrow(() -> new InventoryItemNotFoundException("Предмет с id=" + id + " не найден"));
      }
 
-     @Transactional
+    @Transactional
     public void reserve(String sku, int quantity, Long orderId) {
-        InventoryItem inventoryItem = inventoryRepository.findBySku(sku)
-                .orElseThrow(() -> new InventoryItemNotFoundException("Предмет со sku=" + sku + " не найден"));
 
         InventoryReservation inventoryReservation = inventoryReservationRepository.findByOrderId(orderId)
                 .orElse(null);
 
         if (inventoryReservation == null) {
+            InventoryItem inventoryItem = inventoryRepository.findBySku(sku)
+                    .orElseThrow(() -> new InventoryItemNotFoundException("Предмет со sku=" + sku + " не найден"));
             if (inventoryItem.getQuantity() >= quantity) {
                 inventoryItem.setQuantity(inventoryItem.getQuantity() - quantity);
 
@@ -42,13 +43,18 @@ public class InventoryService {
                 inventoryReservationNew.setQuantity(quantity);
                 inventoryReservationNew.setOrderId(orderId);
                 inventoryReservationNew.setCreatedAt(LocalDateTime.now());
-                inventoryReservationRepository.save(inventoryReservationNew);
+                try {
+                    inventoryReservationRepository.saveAndFlush(inventoryReservationNew);
+                } catch (DataIntegrityViolationException e) {
+                    throw new InventoryReservationConflictException("Резервирование " + orderId + " уже использовано для другого резервирования, и новый запрос конфликтует с уже сохранёнными данными.");
+                }
+
             } else {
                 throw new InsufficientStockException("Складская позиция существует, но запрошенное количество зарезервировать невозможно.");
             }
         } else {
             if (!Objects.equals(inventoryReservation.getSku(), sku) || inventoryReservation.getQuantity() != quantity) {
-                throw new InventoryReservationConflictException("Резервирование " + orderId +" уже использовано для другого резервирования, и новый запрос конфликтует с уже сохранёнными данными.");
+                throw new InventoryReservationConflictException("Резервирование " + orderId + " уже использовано для другого резервирования, и новый запрос конфликтует с уже сохранёнными данными.");
             }
         }
     }
