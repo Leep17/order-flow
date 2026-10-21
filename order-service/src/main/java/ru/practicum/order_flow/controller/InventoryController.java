@@ -21,7 +21,7 @@ public class InventoryController {
     @PostMapping("/reserve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reserve(@Valid @RequestBody ReserveInventoryRequestDto reserveInventoryRequestDto) {
-        inventoryClient.reserve(reserveInventoryRequestDto.getSku(), reserveInventoryRequestDto.getQuantity());
+        inventoryClient.reserve(reserveInventoryRequestDto.getSku(), reserveInventoryRequestDto.getQuantity(), reserveInventoryRequestDto.getOrderId());
     }
 
 }
