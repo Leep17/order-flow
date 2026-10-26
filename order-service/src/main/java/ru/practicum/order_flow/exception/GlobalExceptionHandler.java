@@ -44,4 +44,11 @@ public class GlobalExceptionHandler {
     public ApiError handleInventoryIntegrationException(InventoryIntegrationException e) {
         return new ApiError(e.getMessage());
     }
+
+    @ExceptionHandler(OrderStatusConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleOrderStatusConflictException(OrderStatusConflictException e) {
+        return new ApiError(e.getMessage());
+    }
+
 }

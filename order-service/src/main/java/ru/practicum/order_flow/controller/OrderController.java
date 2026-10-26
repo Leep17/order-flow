@@ -25,4 +25,10 @@ public class OrderController {
     public OrderDto createOrder(@Valid @RequestBody NewOrderDto newOrderDto) {
         return OrderMapper.toOrderDto(orderService.save(newOrderDto));
     }
+
+    @PostMapping("/{id}/retry")
+    public OrderDto retry(@PathVariable Long id) {
+        return OrderMapper.toOrderDto(orderService.retry(id));
+    }
+
 }
